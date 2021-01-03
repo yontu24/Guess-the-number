@@ -1,13 +1,13 @@
 import socket
-import time
 from _thread import *
 import _pickle as cPickle
 import threading
+import sys
 
-host = "127.0.0.1"
-port = 12345
 
+host, port = "127.0.0.1", 12345
 is_running = True
+
 
 def recv_message(sock):
     global is_running
@@ -25,13 +25,34 @@ def recv_message(sock):
 
 def read_input():
     msg = ''
-    while msg == '':
-        try:
-            msg = input()
-        except EOFError as e:
-            print(e)    
-
+    try:
+        while msg == '':
+            msg = int(input('>>'), 10)
+    except (ValueError, TypeError):
+        return 'no int'
     return msg
+
+
+def display_message(data):
+    global is_running
+    if data == 'WELCOME':
+        print('Bine ai venit. Ghiceste numarul :)')
+    elif data == 'GREATER':
+        print('Numarul este mai mare decat numarul ales.')
+    elif data == 'LOWER':
+        print('Numarul este mai mic decat numarul ales.')
+    elif 'CORRECT' in data:
+        print('Numarul este corect. Scorul tau:', data.split('#')[1])
+        is_running = False
+    elif data == 'NEW':
+        print('Introdu un numar intre [0, 50] ca celalalt jucator sa il ghiceasca.')
+    elif data == 'WAIT':
+        print('Asteapta pana cand celalalt client va introduce un numar.')
+    elif data == 'WAIT_RESULT':
+        print('Asteapta pana cand celalalt client va ghici numarul introdus de tine.')
+    elif 'FINISH' in data:
+        print('Celalalt client a ghicit numarul din', data.split('#')[1], 'incercari.')
+        print('Continua si tu jocul pana ghicesti numarul.')
 
 
 def Main():
@@ -45,29 +66,30 @@ def Main():
 
     try:
         while True:
-            print('>>')
-            message = read_input()
+            # read
+            data = s.recv(1024)
+            if not data:
+                break
+
+            data = cPickle.loads(data)
+            # print("Received: {}".format(data))
+            display_message(data)
 
             if is_running is False:
                 break
+
+            # write
+            message = 'no int'
+            while message == 'no int':
+                message = read_input()
 
             if message == "stop":
                 break
 
             s.send(cPickle.dumps(message))
-
-            data = s.recv(1024)
-
-            if not data:
-                break
-
-            data = cPickle.loads(data)
-
-            print("Received: {}".format(data))
-
     finally:
-        # time.sleep(1)
         s.close()
 
 if __name__ == '__main__': 
-	Main() 
+	Main()
+
