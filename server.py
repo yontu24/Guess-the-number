@@ -1,49 +1,65 @@
 import socket
 import threading
+import _pickle as cPickle
 from _thread import *
 import threading
+from random import randint
 
 
-host = ""
-port = 12345
-
-connections = []
-
+host, port = "", 12345
+random_number = 0
+multiplayer = False
+is_running = True
 
 def UTIL_handleClient(c):
+	global is_running
 	try:
 		while True:
 			data = c.recv(1024)
-			if data == b'':
-				raise RuntimeError("socket connection broken")
 
-			data = data.decode()
+			if not data:
+				print("Am intrat")
+				break
+
+			data = cPickle.loads(data)
 			print('received `{}`'.format(data))
-			data = data[::-1]
 
-			c.send(data.encode())
+			if multiplayer is False:
+				data = data[::-1]
+			else:
+				data = data[::-1]
+				data = "multi " + data
+
+			c.send(cPickle.dumps(data))
 	finally:
+		print('Client {} disconnected'.format(c))
 		c.close()
-		connections.remove(c)
+		is_running = False
 
 
-def Main(): 
+if __name__ == '__main__':
+	#global random_number, multiplayer, is_running
+	random_number = randint(0, 50)
+	print('Numarul generat este', random_number)
+
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.bind((host, port))
 	print("Socket binded to port", port)
 
 	s.listen(2)
 	print("Socket is listening...")
-	while True: 
-		c, addr = s.accept()
-		cThread = threading.Thread(target=UTIL_handleClient, args=(c,))
-		cThread.daemon = True
-		cThread.start()
-		connections.append(c)
-		print('Connected to :', addr[0], ':', addr[1])
-	s.close() 
 
+	client1, addr = s.accept()
+	print('Client 1 connected (', addr[0], ':', addr[1], ')')
+	cThread = threading.Thread(target=UTIL_handleClient, args=(client1,))
+	cThread.daemon = True
+	cThread.start()
 
-if __name__ == '__main__': 
-	Main()
-    
+	client2, addr = s.accept()
+	multiplayer = True
+	print('Client 2 connected (', addr[0], ':', addr[1], ')')
+	cThread = threading.Thread(target=UTIL_handleClient, args=(client2,))
+	cThread.daemon = True
+	cThread.start()
+
+#	s.close()
