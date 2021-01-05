@@ -50,19 +50,8 @@ Modul de a identifica clientul:
 client1 -> fiecare client este instiintat individual in funcite de joc
 client2 -> clientii sunt instiintati in functie de ce fac ceilalti clienti
 '''
+global client_type
 client_type = 0
-
-
-'''
-Starea curenta a jocului:
-0 = single player
-1 = multiplayer:
-	- al doilea jucator care se conecteaza va alege mereu un numar
-	- primul client sau ceilalti in afara de cel carea a ales numarul,
-	va/vor trebui sa-l ghiceasca
-2 = numarul a fost ghicit de un client -> joc terminat
-'''
-##global gamestate
 
 
 '''
@@ -84,9 +73,21 @@ def check_number(data, chosen_nr):
 	return data
 
 
+def send_message(data, curr_client=0, _all=0):
+	if _all == 0:
+		curr_client.send(cPickle.dumps(data))
+	else:
+		for c in range(len(connections)):
+			if curr_client == connections[c]:
+				continue
+
+			connections[c].send(cPickle.dumps(data))
+
+
 def UTIL_handleClient(client):
 	# global is_running
-	global multiplayer_steps, chosen_number, score, client_type, last_score, leader
+	global multiplayer_steps, chosen_number, score, last_score, leader#, client_type, 
+	client_type = 0
 	try:
 		if multiplayer_steps == 0:
 			data = 'WELCOME'
@@ -95,18 +96,19 @@ def UTIL_handleClient(client):
 		elif multiplayer_steps == 2:
 			data = 'GUESS_NR'
 
-		client.send(cPickle.dumps(data))
+		send_message(data, curr_client=client)
 
 		last_data = ''
 
 		while True:
+			print('client_type', client_type)
+			print('last_data', last_data)
 			data = client.recv(1024)
 			if not data:
 				break
 
 			if 'CORRECT' in last_data:
-				data = 'GAME_OVER'
-				client.send(cPickle.dumps(data))
+				send_message('GAME_OVER', curr_client=client)
 				break
 
 			data = cPickle.loads(data)
@@ -146,7 +148,7 @@ def UTIL_handleClient(client):
 					else:
 						data = 'WAIT'
 				else:
-					if client == leader:#connections[-1]:
+					if client == leader:
 						data = 'WAIT_RESULT'
 					else:
 						data = check_number(data, chosen_number)
@@ -154,29 +156,29 @@ def UTIL_handleClient(client):
 
 						# notific clientii
 						if client_type == 2:
-							for c in range(0, connections):
-								connections[c].send(cPickle.dumps(data))
-							continue
+							send_message(data, _all=1)
+							if not 'CORRECT' in data:
+								continue
 
-			client.send(cPickle.dumps(data))
+			send_message(data, curr_client=client)
 
 			# instiintez clientii de scorul unui client care a terminat deja
 			if client_type == 2:
 				if 'CORRECT' in data:
-					for c in range(0, connections):
-						# daca nu, o sa trimit FINISH
-						data = 'GAME_OVER' if connections[c] == client else 'NOTIFY'
-						connections[c].send(cPickle.dumps(data))
+					print(data)
+					send_message('GAME_OVER', curr_client=client) # daca nu, o sa trimit FINISH
+					send_message('NOTIFY' + '#' + str(score), _all=1)
 			
 			last_data = data
 	finally:
 		print('Client {} disconnected'.format(client))
+		# if len(connections) > 1:
+		# 	send_message('CL_DISCONN' + '#' + str(connections.index(client)) + '#' + str(len(connections)), _all=1)
 		connections.remove(client)
 
 		# cand va fi din nou un client vom reseta numarul ales de ultimul client conectat
 		if len(connections) == 1:
-			# data = 'FINISH' + '#' + str(score)
-			# connections[0].send(cPickle.dumps(data))
+			# send_message('FINISH' + '#' + str(score), curr_client=connections[0])
 			chosen_number = -1
 			multiplayer_steps = 0
 			leader = -1
