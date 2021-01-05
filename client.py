@@ -9,20 +9,6 @@ host, port = "127.0.0.1", 12345
 is_running = True
 
 
-def recv_message(sock):
-    global is_running
-    while is_running:
-        # data = str(sock.recv(1024).decode())
-        data = sock.recv(1024)
-
-        if not data:
-            break
-
-        data = cPickle.loads(data)
-
-        print("Received: {}".format(data))
-
-
 def read_input():
     msg = ''
     try:
@@ -35,14 +21,24 @@ def read_input():
 
 def display_message(data):
     global is_running
+    print('received `{}`'.format(data))
     if data == 'WELCOME':
         print('Bine ai venit. Ghiceste numarul :)')
     elif data == 'GREATER':
         print('Numarul este mai mare decat numarul ales.')
+    elif 'GREATER2' in data:
+        print('Numarul este mai mare decat numarul ales.')
+        print('Celalalt client a ghicit numarul din', data.split('#')[1], 'incercari.')
     elif data == 'LOWER':
         print('Numarul este mai mic decat numarul ales.')
+    elif 'LOWER2' in data:
+        print('Numarul este mai mic decat numarul ales.')
+        print('Celalalt client a ghicit numarul din', data.split('#')[1], 'incercari.')
     elif 'CORRECT' in data:
         print('Numarul este corect. Scorul tau:', data.split('#')[1])
+        print('Introdu orice numar pentru a finaliza sesiunea.')
+    elif data == 'GAME_OVER':
+        print('Jocul s-a terminat. :)')
         is_running = False
     elif data == 'NEW':
         print('Introdu un numar intre [0, 50] ca celalalt jucator sa il ghiceasca.')
@@ -53,6 +49,8 @@ def display_message(data):
     elif 'FINISH' in data:
         print('Celalalt client a ghicit numarul din', data.split('#')[1], 'incercari.')
         print('Continua si tu jocul pana ghicesti numarul.')
+    elif data == 'GUESS_NR':
+        print('Bine ai venit. Ghiceste numarul introdus de un client. :)')
 
 
 def Main():
@@ -60,25 +58,18 @@ def Main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
 
-    # cThread = threading.Thread(target=recv_message, args=(s,))
-    # cThread.daemon = True
-    # cThread.start()
-
     try:
         while True:
-            # read
             data = s.recv(1024)
             if not data:
                 break
 
             data = cPickle.loads(data)
-            # print("Received: {}".format(data))
             display_message(data)
 
             if is_running is False:
                 break
 
-            # write
             message = 'no int'
             while message == 'no int':
                 message = read_input()
