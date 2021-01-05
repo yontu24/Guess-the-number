@@ -43,7 +43,7 @@ def display_message(data):
     elif data == 'NEW':
         print('Introdu un numar intre [0, 50] ca celalalt jucator sa il ghiceasca.')
     elif data == 'WAIT':
-        print('Asteapta pana cand celalalt client va introduce un numar.')
+        print('Asteapta pana cand liderul va introduce un numar.')
     elif data == 'WAIT_RESULT':
         print('Asteapta pana cand celalalt client va ghici numarul introdus de tine.')
     elif 'FINISH' in data:
@@ -70,14 +70,11 @@ def Main():
             if is_running is False:
                 break
 
-            message = 'no int'
-            while message == 'no int':
-                message = read_input()
+            number = 'no int'
+            while number == 'no int' or not (0 <= number <= 50):
+                number = read_input()
 
-            if message == "stop":
-                break
-
-            s.send(cPickle.dumps(message))
+            s.send(cPickle.dumps(number))
     finally:
         s.close()
 
