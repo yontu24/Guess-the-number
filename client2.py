@@ -13,15 +13,12 @@ first_msg = True
 def recv_number(sock):
     global is_running
     while is_running:
-        # data = str(sock.recv(1024).decode())
         data = sock.recv(1024)
-
         if not data:
             break
 
         data = cPickle.loads(data)
-
-        print("Received: {}".format(data))
+        display_message(data)
 
 
 def read_input():
@@ -34,26 +31,40 @@ def read_input():
     return msg
 
 
-def display_number(data):
+def display_message(data):
     global is_running
+    print('received `{}`'.format(data))
     if data == 'WELCOME':
         print('Bine ai venit. Ghiceste numarul :)')
     elif data == 'GREATER':
         print('Numarul este mai mare decat numarul ales.')
+    elif 'GREATER2' in data:
+        print('Numarul este mai mare decat numarul ales.')
+        print('Celalalt client a ghicit numarul din', data.split('#')[1], 'incercari.')
     elif data == 'LOWER':
         print('Numarul este mai mic decat numarul ales.')
+    elif 'LOWER2' in data:
+        print('Numarul este mai mic decat numarul ales.')
+        print('Celalalt client a ghicit numarul din', data.split('#')[1], 'incercari.')
     elif 'CORRECT' in data:
         print('Numarul este corect. Scorul tau:', data.split('#')[1])
+        print('Introdu orice numar pentru a finaliza sesiunea.')
+    elif data == 'GAME_OVER':
+        print('Jocul s-a terminat. :)')
         is_running = False
     elif data == 'NEW':
         print('Introdu un numar intre [0, 50] ca celalalt jucator sa il ghiceasca.')
     elif data == 'WAIT':
-        print('Asteapta pana cand celalalt client va introduce un numar.')
+        print('Asteapta pana cand liderul va introduce un numar.')
     elif data == 'WAIT_RESULT':
         print('Asteapta pana cand celalalt client va ghici numarul introdus de tine.')
     elif 'FINISH' in data:
         print('Celalalt client a ghicit numarul din', data.split('#')[1], 'incercari.')
         print('Continua si tu jocul pana ghicesti numarul.')
+    elif data == 'GUESS_NR':
+        print('Bine ai venit. Ghiceste numarul introdus de un client. :)')
+    elif 'NOTIFY' in data:
+        print('Unul dintre clienti a reusit sa termine jocul din', data.split('#')[1], 'incercari.')
 
 
 def Main():
@@ -61,31 +72,18 @@ def Main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
 
-    # cThread = threading.Thread(target=recv_number, args=(s,))
-    # cThread.daemon = True
-    # cThread.start()
+    cThread = threading.Thread(target=recv_number, args=(s,))
+    cThread.daemon = True
+    cThread.start()
 
     try:
         while True:
-            # read
-            data = s.recv(1024)
-            if not data:
+            if is_running == False:
                 break
-
-            data = cPickle.loads(data)
-            # print("Received: {}".format(data))
-            display_number(data)
-
-            if is_running is False:
-                break
-
-            # write
+            
             number = 'no int'
-            while number == 'no int':
+            while number == 'no int' or not (0 <= number <= 50):
                 number = read_input()
-
-            if number == "stop":
-                break
 
             if first_msg:
                 number = 'client2' + '#' + str(number)
