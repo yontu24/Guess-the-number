@@ -33,19 +33,21 @@ def read_input():
 
 def display_message(data):
     global is_running
-    print('received `{}`'.format(data))
+    # print('received `{}`'.format(data))
     if data == 'WELCOME':
         print('Bine ai venit. Ghiceste numarul :)')
+    elif 'ALL' in data:
+        data = data.split('#')
+        if data[1] == 'GREATER':
+            print('Client: Numarul este mai mare decat numarul ales.')
+        elif data[1] == 'LOWER':
+            print('Client: Numarul este mai mic decat numarul ales.')
+        # elif 'CORRECT' in data[1]:
+        #     print('Clientul a ghicit numarul tau din', data[2], 'incercari.')
     elif data == 'GREATER':
         print('Numarul este mai mare decat numarul ales.')
-    elif 'GREATER2' in data:
-        print('Numarul este mai mare decat numarul ales.')
-        print('Celalalt client a ghicit numarul din', data.split('#')[1], 'incercari.')
     elif data == 'LOWER':
         print('Numarul este mai mic decat numarul ales.')
-    elif 'LOWER2' in data:
-        print('Numarul este mai mic decat numarul ales.')
-        print('Celalalt client a ghicit numarul din', data.split('#')[1], 'incercari.')
     elif 'CORRECT' in data:
         print('Numarul este corect. Scorul tau:', data.split('#')[1])
         print('Introdu orice numar pentru a finaliza sesiunea.')
@@ -65,7 +67,7 @@ def display_message(data):
         print('Bine ai venit. Ghiceste numarul introdus de un client. :)')
     elif 'NOTIFY' in data:
         print('Unul dintre clienti a reusit sa termine jocul din', data.split('#')[1], 'incercari.')
-
+        print('E randul tau sa ghicesti numarul.')
 
 def Main():
     global is_running, first_msg

@@ -21,7 +21,7 @@ def read_input():
 
 def display_message(data):
     global is_running
-    print('received `{}`'.format(data))
+    # print('received `{}`'.format(data))
     if data == 'WELCOME':
         print('Bine ai venit. Ghiceste numarul :)')
     elif data == 'GREATER':
