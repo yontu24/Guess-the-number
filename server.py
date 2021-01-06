@@ -85,7 +85,6 @@ def send_message(data, curr_client=0, _all=0):
 
 
 def UTIL_handleClient(client):
-	# global is_running
 	global multiplayer_steps, chosen_number, score, last_score, leader#, client_type, 
 	client_type = 0
 	try:
@@ -101,8 +100,6 @@ def UTIL_handleClient(client):
 		last_data = ''
 
 		while True:
-			print('client_type', client_type)
-			print('last_data', last_data)
 			data = client.recv(1024)
 			if not data:
 				break
@@ -126,13 +123,17 @@ def UTIL_handleClient(client):
 				data = check_number(data, random_number)
 
 				# clientul care a introdus numarul asteapta
-				if last_data == 'WAIT_RESULT':
-					data = data + '2' + '#' + str(last_score)
+				if client_type == 1:
+					if last_data == 'WAIT_RESULT':
+						data = data + '2' + '#' + str(last_score)
+				# else:
+				# 	if last_data == 'WAIT_RESULT':
+				# 		send_message('FINISH' + '#' + str(last_score), _all=1)
 			else:
 				if multiplayer_steps == 0:
 					# al doilea client (sau ultimul) va trimite numarul catre server
 					if client == connections[-1]:
-						# resetam scorul (jocul se desfasoara in 2)
+						# resetam scorul (joc multiplayer)
 						score = 0
 						data = 'NEW'
 						multiplayer_steps = 1
@@ -156,7 +157,8 @@ def UTIL_handleClient(client):
 
 						# notific clientii
 						if client_type == 2:
-							send_message(data, _all=1)
+							send_message('ALL' + '#' + data, _all=1, curr_client=client)
+							send_message(data, curr_client=client)
 							if not 'CORRECT' in data:
 								continue
 
@@ -165,15 +167,12 @@ def UTIL_handleClient(client):
 			# instiintez clientii de scorul unui client care a terminat deja
 			if client_type == 2:
 				if 'CORRECT' in data:
-					print(data)
 					send_message('GAME_OVER', curr_client=client) # daca nu, o sa trimit FINISH
 					send_message('NOTIFY' + '#' + str(score), _all=1)
 			
 			last_data = data
 	finally:
 		print('Client {} disconnected'.format(client))
-		# if len(connections) > 1:
-		# 	send_message('CL_DISCONN' + '#' + str(connections.index(client)) + '#' + str(len(connections)), _all=1)
 		connections.remove(client)
 
 		# cand va fi din nou un client vom reseta numarul ales de ultimul client conectat
@@ -188,7 +187,6 @@ def UTIL_handleClient(client):
 
 
 if __name__ == '__main__':
-	#global random_number, is_running
 	random_number = randint(0, 50)
 	print('Numarul generat este', random_number)
 
@@ -208,13 +206,6 @@ if __name__ == '__main__':
 		cThread.daemon = True
 		cThread.start()
 		connections.append(client)
-
-	# client, addr = s.accept()
-	# print('Client connected (', addr[0], ':', addr[1], ')')
-	# cThread = threading.Thread(target=UTIL_handleClient, args=(client,))
-	# cThread.daemon = True
-	# cThread.start()
-	# connections.append(client)
 
 	message = ''
 	while not message == 'stop':
